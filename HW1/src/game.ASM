@@ -163,7 +163,7 @@ START_PAR_DELTAS   fix 0.0005
 START_PAR_COUNT    fix 48
 
 PLAYER_SHIELD_R     fix 40008.0
-PLAYER_SPEED        fix 37.0
+PLAYER_SPEED        fix 7.0
 PLAYER_HR           fix 1000.0
 PLAYER_GR                    fix 32.0
 PLAYER_TURN_SPEED            fix -0.01
