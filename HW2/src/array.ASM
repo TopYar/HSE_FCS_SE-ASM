@@ -14,38 +14,38 @@ section '.data' data readable writable;
         yourArr db 'Your new array:', 10, 13, 0
         newLine db 10, 13, 0
 
-        N dd ?          ; СЂР°Р·РјРµСЂ РјР°СЃСЃРёРІР°
-        num dd ?        ; РІРІРµРґРµРЅРЅРѕРµ С‡РёСЃР»Рѕ
-        i dd 0          ; СЃС‡РµС‚С‡РёРє РІ С†РёРєР»Рµ
-        arr dd ?        ; РјР°СЃСЃРёРІ
-        max dd -32768   ; РЅРёР¶РЅВ¤В¤ РіСЂР°РЅРёС†Р° dd
+        N dd ?          ; размер массива
+        num dd ?        ; введенное число
+        i dd 0          ; счетчик в цикле
+        arr dd ?        ; массив
+        max dd -32768   ; нижняя граница dd
 
         NULL = 0
 
 section '.code' code readable executable
         _start:
                 cinvoke printf, typeSize
-                cinvoke scanf, formatInt, N     ; СЃС‡РёС‚С‹РІР°РµРј СЂР°Р·РјРµСЂ РјР°СЃСЃРёРІР°
+                cinvoke scanf, formatInt, N     ; считываем размер массива
                 cinvoke printf, typeArr
 
-                invoke  VirtualAlloc,NULL,[N],MEM_COMMIT+MEM_RESERVE,PAGE_READWRITE ;РјР°СЃСЃРёРІ РЅР° N С‡РёСЃРµР»
+                invoke  VirtualAlloc,NULL,[N],MEM_COMMIT+MEM_RESERVE,PAGE_READWRITE ;массив на N чисел
                 mov [arr], eax
 
-                jmp _InputArray                 ; РёРґРµРј РІ РїСЂРѕС†РµРґСѓСЂСѓ РІРІРѕРґР° РјР°СЃСЃРёРІР°
-                ReturnFromInput:                ; РІРѕР·РІСЂР°С‰Р°РµРјСЃВ¤
+                jmp _InputArray                 ; идем в процедуру ввода массива
+                ReturnFromInput:                ; возвращаемся
 
                 cinvoke printf, newLine
 
-                mov [i], 0                      ; РѕР±РЅСѓР»В¤РµРј СЃС‡РµС‚С‡РёРє С†РёРєР»Р°
-                jmp _ChangeNegativeElements     ; РІС‹РїРѕР»РЅРµРЅРёРµ Р·Р°РґР°РЅРёВ¤: Р·Р°РјРµРЅРёС‚СЊ РѕС‚СЂРёС†Р°С‚РµР»СЊРЅС‹Рµ СЌР»РµРјРµРЅС‚С‹ РЅР° РјР°РєСЃРёРјСѓРј
+                mov [i], 0                      ; обнуляем счетчик цикла
+                jmp _ChangeNegativeElements     ; выполнение задания: заменить отрицательные элементы на максимум
                 ReturnFromChanging:
 
-                cinvoke printf, typeMax, [max]  ; РІС‹РІРѕРґРёРј РјР°РєСЃРёРјСѓРј РІ РјР°СЃСЃРёРІРµ
+                cinvoke printf, typeMax, [max]  ; выводим максимум в массиве
                 cinvoke printf, newLine
                 cinvoke printf, yourArr
 
-                mov [i], 0                      ; РѕР±РЅСѓР»В¤РµРј СЃС‡РµС‚С‡РёРє С†РёРєР»Р°
-                jmp _OutputArray                ; РІС‹РІРѕРґРёРј РІРµСЃСЊ РјР°СЃСЃРёРІ
+                mov [i], 0                      ; обнуляем счетчик цикла
+                jmp _OutputArray                ; выводим весь массив
                 ReturnFromOutput:
 
                 call [getch]
@@ -53,40 +53,40 @@ section '.code' code readable executable
                 push NULL
                 call [ExitProcess]
 
-        ; --С•вЂ“СњГ·в‰€Ж’вЂќвЂ“Сџ--
+        ; --ПРОЦЕДУРЫ--
         _InputArray:
                 cinvoke scanf, formatInt, num
 
                 mov ecx, [i]
-                imul ecx, dword 4       ; РІС‹С‡РёСЃР»В¤РµРј СЃРІРґРёРі СѓРєР°Р·Р°С‚РµР»В¤
+                imul ecx, dword 4       ; вычисляем свдиг указателя
                 mov eax, [arr]
-                add eax, ecx            ; СЃРјРµС‰Р°РµРј СѓРєР°Р·Р°С‚РµР»СЊ РЅР° С‚РѕР»СЊРєРѕ С‡С‚Рѕ РїРѕСЃС‡РёС‚Р°РЅРЅС‹Р№ СЃРґРІРёРі
-                mov ecx, [num]          ; Р·Р°РїРёС€РµРј РІРІРµРґРµРЅРЅРѕРµ С‡РёСЃР»Рѕ РІ ecx
-                mov [eax], ecx          ; Р·Р°РїРёСЃР°Р»Рё РІРІРµРґРµРЅРЅРѕРµ С‡РёСЃР»Рѕ РІ В¤С‡РµР№РєСѓ РјР°СЃСЃРёРІР°
+                add eax, ecx            ; смещаем указатель на только что посчитанный сдвиг
+                mov ecx, [num]          ; запишем введенное число в ecx
+                mov [eax], ecx          ; записали введенное число в ячейку массива
 
-                cmp ecx, [max]          ; РµСЃР»Рё РІРІРµРґРµРЅРЅРѕРµ С‡РёСЃР»Рѕ Р±РѕР»СЊС€Рµ РјР°РєСЃРёРјСѓРјР°,
-                jg _UpdateMax           ; С‚Рѕ РѕР±РЅРѕРІР»В¤РµРј РјР°РєСЃРёРјСѓРј
+                cmp ecx, [max]          ; если введенное число больше максимума,
+                jg _UpdateMax           ; то обновляем максимум
 
-                continueInput:          ; РјРµС‚РєР° РІРѕР·РІСЂР°С‰РµРЅРёВ¤
+                continueInput:          ; метка возвращения
 
-                inc [i]                 ; РёРЅРєСЂРµРјРµРЅРёСЂСѓРµРј СЃС‡РµС‚С‡РёРє
+                inc [i]                 ; инкременируем счетчик
                 mov eax, [i]
-                cmp eax, [N]            ; СЃСЂР°РІРЅРµРЅРёРµ СЃ СЂР°Р·РјРµСЂРѕРј РјР°СЃСЃРёРІР°
+                cmp eax, [N]            ; сравнение с размером массива
                 jne _InputArray
                 jmp ReturnFromInput
 
-        _UpdateMax:                 ; вЂСѓРЅРєС†РёВ¤, РѕР±РЅРѕРІР»В¤СЋС‰Р°В¤ РјР°РєСЃРёРјСѓРј
+        _UpdateMax:                 ; Функция, обновляющая максимум
                 mov [max], ecx
-                jmp continueInput  ; РІРѕР·РІСЂР°С‰Р°РµРјСЃВ¤ РІ С†РёРєР» РІРІРѕРґР°
+                jmp continueInput  ; возвращаемся в цикл ввода
 
         _OutputArray:
                 mov ecx, [i]
                 imul ecx, dword 4
                 mov eax, [arr]
                 add eax, ecx
-                mov ecx, [eax]  ; РїРѕР»СѓС‡Р°РµРј Р·РЅР°С‡РµРЅРёРµ СЌР»РµРјРµРЅС‚Р° РІ РјР°СЃСЃРёРІРµ
+                mov ecx, [eax]  ; получаем значение элемента в массиве
 
-                cinvoke printf, formatIntWithSpace, ecx   ; РІС‹РІРѕРґ С‡РёСЃР»Р°
+                cinvoke printf, formatIntWithSpace, ecx   ; вывод числа
 
                 inc [i]
                 mov eax, [i]
@@ -99,11 +99,11 @@ section '.code' code readable executable
                 imul ecx, dword 4
                 mov eax, [arr]
                 add eax, ecx
-                mov ecx, [eax]          ; РїРѕР»СѓС‡Р°РµРј Р·РЅР°С‡РµРЅРёРµ СЌР»РµРјРµРЅС‚Р° РІ РјР°СЃСЃРёРІРµ
+                mov ecx, [eax]          ; получаем значение элемента в массиве
 
                 cmp ecx, 0
-                jl _UpdateElement       ; РѕР±РЅРѕРІР»В¤РµРј СЌР»РµРјРµРЅС‚, РµСЃР»Рё РѕРЅ РјРµРЅСЊС€Рµ РЅСѓР»В¤
-                _ReturnChanging:        ; РјРµС‚РєР° РІРѕР·РІСЂР°С‚Р° РёР· РѕР±РЅРѕРІР»РµРЅРёВ¤ СЌР»РµРјРµРЅС‚Р°
+                jl _UpdateElement       ; обновляем элемент, если он меньше нуля
+                _ReturnChanging:        ; метка возврата из обновления элемента
 
                 inc [i]
                 mov eax, [i]
@@ -128,6 +128,6 @@ section '.idata' import data readable
 
         import msvcrt,\
                printf, 'printf',\
-               scanf, 'scanf',\ ;РґРѕР±Р°РІРёРј С„СѓРЅРєС†РёСЋ РґР»В¤ СЃС‡РёС‚С‹РІР°РЅРёВ¤
+               scanf, 'scanf',\ ;добавим функцию для считывания
                getch, '_getch'
 
