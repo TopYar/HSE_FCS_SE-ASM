@@ -18,7 +18,7 @@ section '.data' data readable writable;
         num dd ?        ; введенное число
         i dd 0          ; счетчик в цикле
         arr dd ?        ; массив
-        max dd -32768   ; нижн€€ граница dd
+        max dd -2147483648   ; нижн€€ граница dd
 
         NULL = 0
 
@@ -47,6 +47,8 @@ section '.code' code readable executable
                 mov [i], 0                      ; обнул€ем счетчик цикла
                 jmp _OutputArray                ; выводим весь массив
                 ReturnFromOutput:
+
+                invoke  VirtualFree, [arr], [N], MEM_DECOMMIT  ; освобождение пам€ти
 
                 call [getch]
 
@@ -123,7 +125,8 @@ section '.idata' import data readable
 
         import kernel,\
                ExitProcess, 'ExitProcess',\
-               VirtualAlloc, 'VirtualAlloc'
+               VirtualAlloc, 'VirtualAlloc',\
+               VirtualFree, 'VirtualFree'
 
 
         import msvcrt,\
