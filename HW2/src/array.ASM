@@ -10,8 +10,9 @@ section '.data' data readable writable;
         formatIntWithSpace db '%d ', 0
         typeSize db 'Please, type size of an array: ', 10, 13, 0
         typeArr db 'Please, type your (int) array: ', 10, 13, 0
-        typeMax db 'Max number is %d', 10, 13, 0
+        typeMax db 'Max number is %d', 10, 13, 10, 13, 0
         yourArr db 'Your new array:', 10, 13, 0
+        wrongInput db 'Incorrect input. Please try again', 10, 13, 10, 13, 0
         newLine db 10, 13, 0
 
         N dd ?          ; размер массива
@@ -19,6 +20,7 @@ section '.data' data readable writable;
         i dd 0          ; счетчик в цикле
         arr dd ?        ; массив
         max dd -2147483648   ; нижн€€ граница dd
+        tmpStack dd ?   ; временна€ переменна€ дл€ стека
 
         NULL = 0
 
@@ -26,37 +28,40 @@ section '.code' code readable executable
         _start:
                 cinvoke printf, typeSize
                 cinvoke scanf, formatInt, N     ; считываем размер массива
-                cinvoke printf, typeArr
+
+                mov eax, 1
+                cmp eax, [N]                    ; провер€ем, был ли размер меньше единицы
+                jg WrongInput
+
+                cinvoke printf, typeArr         ; просим ввести массив
 
                 invoke  VirtualAlloc,NULL,[N],MEM_COMMIT+MEM_RESERVE,PAGE_READWRITE ;массив на N чисел
                 mov [arr], eax
 
-                jmp _InputArray                 ; идем в процедуру ввода массива
-                ReturnFromInput:                ; возвращаемс€
+                call InputArray                 ; идем в процедуру ввода массива
 
                 cinvoke printf, newLine
 
                 mov [i], 0                      ; обнул€ем счетчик цикла
-                jmp _ChangeNegativeElements     ; выполнение задани€: заменить отрицательные элементы на максимум
-                ReturnFromChanging:
+                call ChangeNegativeElements     ; выполнение задани€: заменить отрицательные элементы на максимум
+
 
                 cinvoke printf, typeMax, [max]  ; выводим максимум в массиве
-                cinvoke printf, newLine
                 cinvoke printf, yourArr
 
                 mov [i], 0                      ; обнул€ем счетчик цикла
-                jmp _OutputArray                ; выводим весь массив
-                ReturnFromOutput:
+                call OutputArray                ; выводим весь массив
+
 
                 invoke  VirtualFree, [arr], [N], MEM_DECOMMIT  ; освобождение пам€ти
 
                 call [getch]
 
-                push NULL
-                call [ExitProcess]
+                jmp ExitProgram
 
         ; --ѕ–ќ÷≈ƒ”–џ--
-        _InputArray:
+        InputArray:
+                mov [tmpStack], esp
                 cinvoke scanf, formatInt, num
 
                 mov ecx, [i]
@@ -74,14 +79,17 @@ section '.code' code readable executable
                 inc [i]                 ; инкременируем счетчик
                 mov eax, [i]
                 cmp eax, [N]            ; сравнение с размером массива
-                jne _InputArray
-                jmp ReturnFromInput
+                jne InputArray
 
-        _UpdateMax:                 ; ‘ункци€, обновл€юща€ максимум
+                mov esp, [tmpStack]     ; возвращаем адрес возврата в стек
+                ret
+
+        _UpdateMax:                ; ‘ункци€, обновл€юща€ максимум
                 mov [max], ecx
                 jmp continueInput  ; возвращаемс€ в цикл ввода
 
-        _OutputArray:
+        OutputArray:
+                mov [tmpStack], esp
                 mov ecx, [i]
                 imul ecx, dword 4
                 mov eax, [arr]
@@ -93,10 +101,13 @@ section '.code' code readable executable
                 inc [i]
                 mov eax, [i]
                 cmp eax, [N]
-                jne _OutputArray
-                jmp ReturnFromOutput
+                jne OutputArray
 
-        _ChangeNegativeElements:
+                mov esp, [tmpStack]  ; возвращаем адрес возврата в стек
+                ret
+
+        ChangeNegativeElements:
+                mov [tmpStack], esp
                 mov ecx, [i]
                 imul ecx, dword 4
                 mov eax, [arr]
@@ -110,13 +121,23 @@ section '.code' code readable executable
                 inc [i]
                 mov eax, [i]
                 cmp eax, [N]
-                jne _ChangeNegativeElements
-                jmp ReturnFromChanging
+                jne ChangeNegativeElements
+
+                mov esp, [tmpStack]  ; возвращаем адрес возврата в стек
+                ret
 
         _UpdateElement:
                 mov ecx, [max]
                 mov [eax], ecx
                 jmp _ReturnChanging
+
+        WrongInput:
+                cinvoke printf, wrongInput
+                jmp _start
+
+        ExitProgram:
+                push NULL
+                call [ExitProcess]
 
 
 section '.idata' import data readable
@@ -125,8 +146,8 @@ section '.idata' import data readable
 
         import kernel,\
                ExitProcess, 'ExitProcess',\
-               VirtualAlloc, 'VirtualAlloc',\
-               VirtualFree, 'VirtualFree'
+               VirtualAlloc, 'VirtualAlloc',\   ; дл€ резервировани€ пам€ти
+               VirtualFree, 'VirtualFree'       ; дл€ освобождени€ пам€ти
 
 
         import msvcrt,\
