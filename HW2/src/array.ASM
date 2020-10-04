@@ -11,14 +11,17 @@ section '.data' data readable writable;
         typeSize db 'Please, type size of an array: ', 10, 13, 0
         typeArr db 'Please, type your (int) array: ', 10, 13, 0
         typeMax db 'Max number is %d', 10, 13, 10, 13, 0
-        yourArr db 'Your new array:', 10, 13, 0
+        yourOldArr db 'Your old array:', 10, 13, 0
+        yourNewArr db 'Your new array:', 10, 13, 0
         wrongInput db 'Incorrect input. Please try again', 10, 13, 10, 13, 0
         newLine db 10, 13, 0
 
         N dd ?          ; размер массива
         num dd ?        ; введенное число
         i dd 0          ; счетчик в цикле
-        arr dd ?        ; массив
+        A dd ?          ; массив A
+        B dd ?          ; массив B
+        arr dd ?        ; массив, с которым работаем в данный момент
         max dd -2147483648   ; нижняя граница dd
         tmpStack dd ?   ; временная переменная для стека
 
@@ -35,8 +38,11 @@ section '.code' code readable executable
 
                 cinvoke printf, typeArr         ; просим ввести массив
 
-                invoke  VirtualAlloc,NULL,[N],MEM_COMMIT+MEM_RESERVE,PAGE_READWRITE ;массив на N чисел
-                mov [arr], eax
+                invoke  VirtualAlloc,NULL,[N],MEM_COMMIT+MEM_RESERVE,PAGE_READWRITE ;массив A на N чисел
+                mov [A], eax
+
+                invoke  VirtualAlloc,NULL,[N],MEM_COMMIT+MEM_RESERVE,PAGE_READWRITE ;массив B на N чисел
+                mov [B], eax
 
                 call InputArray                 ; идем в процедуру ввода массива
 
@@ -45,15 +51,24 @@ section '.code' code readable executable
                 mov [i], 0                      ; обнуляем счетчик цикла
                 call ChangeNegativeElements     ; выполнение задания: заменить отрицательные элементы на максимум
 
+                cinvoke printf, yourOldArr
+                mov [i], 0                      ; обнуляем счетчик цикла
+                mov eax, [A]                    ; массив, который будем выводить
+                mov [arr], eax
+                call OutputArray                ; выводим весь массив
 
+                cinvoke printf, newLine
                 cinvoke printf, typeMax, [max]  ; выводим максимум в массиве
-                cinvoke printf, yourArr
+                cinvoke printf, yourNewArr
 
                 mov [i], 0                      ; обнуляем счетчик цикла
+                mov eax, [B]                    ; массив, который будем выводить
+                mov [arr], eax
                 call OutputArray                ; выводим весь массив
 
 
-                invoke  VirtualFree, [arr], [N], MEM_DECOMMIT  ; освобождение памяти
+                invoke  VirtualFree, [A], [N], MEM_DECOMMIT  ; освобождение памяти
+                invoke  VirtualFree, [B], [N], MEM_DECOMMIT  ; освобождение памяти
 
                 call [getch]
 
@@ -66,7 +81,7 @@ section '.code' code readable executable
 
                 mov ecx, [i]
                 imul ecx, dword 4       ; вычисляем свдиг указателя
-                mov eax, [arr]
+                mov eax, [A]
                 add eax, ecx            ; смещаем указатель на только что посчитанный сдвиг
                 mov ecx, [num]          ; запишем введенное число в ecx
                 mov [eax], ecx          ; записали введенное число в ячейку массива
@@ -107,18 +122,23 @@ section '.code' code readable executable
                 ret
 
         ChangeNegativeElements:
-                mov [tmpStack], esp
+                mov [tmpStack], esp     ; сохраняем стек
+
                 mov ecx, [i]
                 imul ecx, dword 4
-                mov eax, [arr]
+                mov eax, [A]            ; получаем ссылку на массив A
                 add eax, ecx
-                mov ecx, [eax]          ; получаем значение элемента в массиве
+                mov ebx, [eax]          ; получаем значение элемента в массиве
 
-                cmp ecx, 0
+                mov eax, [B]            ; получаем ссылку на массив B
+                add eax, ecx
+                mov [eax], ebx          ; записываем значение элемента в B
+
+                cmp ebx, 0
                 jl _UpdateElement       ; обновляем элемент, если он меньше нуля
                 _ReturnChanging:        ; метка возврата из обновления элемента
 
-                inc [i]
+                inc [i]                 ; инкременируем счетчик
                 mov eax, [i]
                 cmp eax, [N]
                 jne ChangeNegativeElements
