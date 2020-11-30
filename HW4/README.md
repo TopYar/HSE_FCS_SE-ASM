@@ -26,7 +26,7 @@
 Рассмотрим некоторые части кода, работу потоков и их основную функцию:<br>
 - **Основная функция программы (main)**<br>
 <img src="https://raw.githubusercontent.com/TopYar/HSE_FCS_SE-ASM/master/HW4/img/main_code.png?v=1.00" alt="" width="500" /> <br><br>
-- **Функция поиска индексов взаимнопростых элементов **<br>
+- **Функция поиска индексов взаимнопростых элементов**<br>
 Здесь вызывается omp parallel, с указанным количеством потоков.<br>
 Далее, вызывается выражение omp for, за которым следует цикл, который будет выполняться параллельно.<br>
 <img src="https://raw.githubusercontent.com/TopYar/HSE_FCS_SE-ASM/master/HW4/img/thread_func.png?v=1.00" alt="" width="700" /> <br><br>
